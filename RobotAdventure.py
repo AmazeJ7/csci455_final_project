@@ -25,7 +25,7 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 temp_s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 temp_s.connect(('10.255.255.255', 1))
 host = temp_s.getsockname()
-temp_s.close
+temp_s.close()
 print(str(host[0]))
 s.bind((str(host[0]), port))
 s.listen(5)
@@ -110,13 +110,13 @@ class Board:
     def print_board(self):
         for i in range(5):
             for j in range(5):
-                self.map[i*5+j].print_top()
+                self.map[i * 5 + j].print_top()
             print()
             for j in range(5):
-                self.map[i*5+j].print_mid()
+                self.map[i * 5 + j].print_mid()
             print()
             for j in range(5):
-                self.map[i*5+j].print_bot()
+                self.map[i * 5 + j].print_bot()
             print()
 
     def start(self):
@@ -137,8 +137,8 @@ class Board:
             self.end = locations[0]
         elif 20 < items[0] < 26:
             self.end = self.map[random.randint(0, 4)]
-        print('Starting at '+str(items[0]))
-        s_2.send(('Starting at '+str(items[0])+'\r\n').encode('ascii'))
+        print('Starting at ' + str(items[0]))
+        s_2.send(('Starting at ' + str(items[0]) + '\r\n').encode('ascii'))
         time.sleep(3)
         s_2.send('Where to?\r\n'.encode('ascii'))
         time.sleep(2)
@@ -165,7 +165,6 @@ class Board:
 
     def fight(self):
         time.sleep(1)
-
 
 
 class Location:
@@ -210,7 +209,6 @@ board.print_board()
 # Socket thread init
 init_socket_thread = threading.Thread(target=init_socket)
 init_socket_thread.start()
-
 
 # # Function to run all actions
 # def run(who):
