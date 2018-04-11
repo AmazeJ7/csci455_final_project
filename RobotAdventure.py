@@ -57,6 +57,18 @@ def receive(r_s):
         msg_parts = msg.split()
         if msg_parts[0] == 'start':
             board.start()
+        elif msg_parts[0] == 'North':
+            board.move("n")
+        elif msg_parts[0] == 'East':
+            board.move("e")
+        elif msg_parts[0] == 'South':
+            board.move("s")
+        elif msg_parts[0] == 'West':
+            board.move("w")
+        elif msg_parts[0] == 'fight':
+            board.fight()
+        elif msg_parts[0] == 'run':
+            board.run()
 
 
 # Class to represent the board
@@ -92,6 +104,8 @@ class Board:
         self.map.append(Location(23, 1, 0, 0, 1))
         self.map.append(Location(24, 1, 1, 0, 0))
         self.map.append(Location(25, 0, 0, 0, 1))
+        self.end = Location
+        self.pos = Location
 
     def print_board(self):
         for i in range(5):
@@ -106,29 +120,52 @@ class Board:
             print()
 
     def start(self):
-        start = Location
-        end = Location
         items = [1, 2, 3, 4, 5, 6, 10, 11, 15, 16, 20, 21, 22, 23, 24, 25]
         random.shuffle(items)
         for i in self.map:
             if items[0] == i.num:
-                start = i
+                self.pos = i
         if 0 < items[0] < 6:
-            end = self.map[random.randint(20, 24)]
+            self.end = self.map[random.randint(20, 24)]
         elif items[0] == 6 or items[0] == 11 or items[0] == 16:
             locations = [self.map[5], self.map[11], self.map[16]]
             random.shuffle(locations)
-            end = locations[0]
+            self.end = locations[0]
         elif items[0] == 10 or items[0] == 15 or items[0] == 20:
             locations = [self.map[9], self.map[14], self.map[19]]
             random.shuffle(locations)
-            end = locations[0]
+            self.end = locations[0]
         elif 20 < items[0] < 26:
-            end = self.map[random.randint(0, 4)]
+            self.end = self.map[random.randint(0, 4)]
         print('Starting at '+str(items[0]))
-        s_2.send(('Starting at '+str(items[0])).encode('ascii'))
+        s_2.send(('Starting at '+str(items[0])+'\r\n').encode('ascii'))
         time.sleep(3)
-        s_2.send('Where to?'.encode('ascii'))
+        s_2.send('Where to?\r\n'.encode('ascii'))
+        time.sleep(2)
+        send_stt()
+
+    def move(self, s):
+        if s == "n" and self.pos.n:
+            self.pos = self.map[self.pos.num - 6]
+            print("You are at " + str(self.pos.num))
+        elif s == "e" and self.pos.e:
+            self.pos = self.map[self.pos.num]
+            print("You are at " + str(self.pos.num))
+        elif s == "s" and self.pos.s:
+            self.pos = self.map[self.pos.num + 4]
+            print("You are at " + str(self.pos.num))
+        elif s == "w" and self.pos.w:
+            self.pos = self.map[self.pos.num - 2]
+            print("You are at " + str(self.pos.num))
+        else:
+            print("You can't move there")
+
+    def run(self):
+        time.sleep(1)
+
+    def fight(self):
+        time.sleep(1)
+
 
 
 class Location:
@@ -173,11 +210,6 @@ board.print_board()
 # Socket thread init
 init_socket_thread = threading.Thread(target=init_socket)
 init_socket_thread.start()
-
-
-
-
-
 
 
 # # Function to run all actions
