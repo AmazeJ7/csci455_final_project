@@ -1,4 +1,3 @@
-
 class Controller:
 
     def __init__(self):
@@ -28,9 +27,11 @@ class Controller:
     # Return Minimum channel range value
     def getMin(self, chan):
         pass
+
     # Return Maximum channel range value
     def getMax(self, chan):
         pass
+
     # Set channel to a specified target value.  Servo will begin moving based
     # on Speed and Acceleration parameters previously set.
     # Target values will be constrained within Min and Max range, if set.
