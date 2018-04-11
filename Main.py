@@ -4,6 +4,7 @@ import time
 import os
 import socket
 import threading
+import random
 
 # Maestro instantiation
 controller = Controller()
@@ -16,39 +17,81 @@ controller.setAccel(3, 20)
 controller.setAccel(3, 20)
 os.system('xset r off')
 
+# Global Variables
+port = 7777
 
+# Socket setup
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+temp_s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+temp_s.connect(('10.255.255.255', 1))
+host = temp_s.getsockname()
+temp_s.close
+print(str(host[0]))
+s.bind((str(host[0]), port))
+s.listen(5)
+
+
+# Function to initiate the socket
+def init_socket():
+    while True:
+        global s_2
+        print('Listening')
+        s_2, ip = s.accept()
+        print('Got a connection from %s' % str(ip))
+        rt = threading.Thread(target=receive(s_2))
+        rt.start()
+
+
+# Function to ask for speech
+def send_stt():
+    send_message = 'get speech\r\n'
+    s_2.send(send_message.encode('ascii'))
+
+
+# Function to receive STT commands
+def receive(r_s):
+    while True:
+        r = r_s.recv(1024)
+        msg = r.decode('ascii')
+        print('Received: ' + msg)
+        msg_parts = msg.split()
+        if msg_parts[0] == 'start':
+            board.start()
+
+
+# Class to represent the board
 class Board:
     def __init__(self):
         self.map = []
-        self.map.append(Location(0, 0, 0, 1, 0, 0))
-        self.map.append(Location(0, 1, 0, 1, 1, 1))
-        self.map.append(Location(0, 2, 0, 0, 1, 1))
-        self.map.append(Location(0, 3, 0, 1, 0, 0))
-        self.map.append(Location(0, 4, 0, 0, 1, 1))
+        self.map.append(Location(1, 0, 1, 0, 0))
+        self.map.append(Location(2, 0, 1, 1, 1))
+        self.map.append(Location(3, 0, 0, 1, 1))
+        self.map.append(Location(4, 0, 1, 0, 0))
+        self.map.append(Location(5, 0, 0, 1, 1))
 
-        self.map.append(Location(1, 0, 0, 1, 1, 0))
-        self.map.append(Location(1, 1, 1, 0, 1, 1))
-        self.map.append(Location(1, 2, 1, 0, 0, 0))
-        self.map.append(Location(1, 3, 0, 1, 1, 0))
-        self.map.append(Location(1, 4, 1, 0, 1, 1))
+        self.map.append(Location(6, 0, 1, 1, 0))
+        self.map.append(Location(7, 1, 0, 1, 1))
+        self.map.append(Location(8, 1, 0, 0, 0))
+        self.map.append(Location(9, 0, 1, 1, 0))
+        self.map.append(Location(10, 1, 0, 1, 1))
 
-        self.map.append(Location(2, 0, 1, 0, 1, 0))
-        self.map.append(Location(2, 1, 1, 1, 0, 0))
-        self.map.append(Location(2, 2, 0, 1, 0, 1))
-        self.map.append(Location(2, 3, 1, 0, 1, 1))
-        self.map.append(Location(2, 4, 1, 0, 1, 0))
+        self.map.append(Location(11, 1, 0, 1, 0))
+        self.map.append(Location(12, 1, 1, 0, 0))
+        self.map.append(Location(13, 0, 1, 0, 1))
+        self.map.append(Location(14, 1, 0, 1, 1))
+        self.map.append(Location(15, 1, 0, 1, 0))
 
-        self.map.append(Location(3, 0, 1, 1, 0, 0))
-        self.map.append(Location(3, 1, 0, 0, 1, 1))
-        self.map.append(Location(3, 2, 0, 0, 1, 0))
-        self.map.append(Location(3, 3, 1, 1, 1, 0))
-        self.map.append(Location(3, 4, 1, 0, 0, 1))
+        self.map.append(Location(16, 1, 1, 0, 0))
+        self.map.append(Location(17, 0, 0, 1, 1))
+        self.map.append(Location(18, 0, 0, 1, 0))
+        self.map.append(Location(19, 1, 1, 1, 0))
+        self.map.append(Location(20, 1, 0, 0, 1))
 
-        self.map.append(Location(4, 0, 0, 1, 0, 0))
-        self.map.append(Location(4, 1, 1, 1, 0, 1))
-        self.map.append(Location(4, 2, 1, 0, 0, 1))
-        self.map.append(Location(4, 3, 1, 1, 0, 0))
-        self.map.append(Location(4, 4, 0, 0, 0, 1))
+        self.map.append(Location(21, 0, 1, 0, 0))
+        self.map.append(Location(22, 1, 1, 0, 1))
+        self.map.append(Location(23, 1, 0, 0, 1))
+        self.map.append(Location(24, 1, 1, 0, 0))
+        self.map.append(Location(25, 0, 0, 0, 1))
 
     def print_board(self):
         for i in range(5):
@@ -62,11 +105,35 @@ class Board:
                 self.map[i*5+j].print_bot()
             print()
 
+    def start(self):
+        start = Location
+        end = Location
+        items = [1, 2, 3, 4, 5, 6, 10, 11, 15, 16, 20, 21, 22, 23, 24, 25]
+        random.shuffle(items)
+        for i in self.map:
+            if items[0] == i.num:
+                start = i
+        if 0 < items[0] < 6:
+            end = self.map[random.randint(20, 24)]
+        elif items[0] == 6 or items[0] == 11 or items[0] == 16:
+            locations = [self.map[5], self.map[11], self.map[16]]
+            random.shuffle(locations)
+            end = locations[0]
+        elif items[0] == 10 or items[0] == 15 or items[0] == 20:
+            locations = [self.map[9], self.map[14], self.map[19]]
+            random.shuffle(locations)
+            end = locations[0]
+        elif 20 < items[0] < 26:
+            end = self.map[random.randint(0, 4)]
+        print('Starting at '+str(items[0]))
+        s_2.send(('Starting at '+str(items[0])).encode('ascii'))
+        time.sleep(3)
+        s_2.send('Where to?'.encode('ascii'))
+
 
 class Location:
-    def __init__(self, row, col, n, e, s, w):
-        self.row = row
-        self.col = col
+    def __init__(self, num, n, e, s, w):
+        self.num = num
         self.n = n
         self.e = e
         self.s = s
@@ -74,160 +141,45 @@ class Location:
 
     def print_top(self):
         if self.n:
-            print("   |  ", end="")
+            print('   |  ', end='')
         else:
-            print("      ", end="")
+            print('      ', end='')
 
     def print_mid(self):
-        if self.row < 2:
+        if self.num < 10:
             if self.w:
-                print("---" + str(5 * self.row + self.col +1), end="")
+                print('---' + str(self.num), end='')
             else:
-                print("   " + str(5 * self.row + self.col+1), end="")
+                print('   ' + str(self.num), end='')
         else:
             if self.w:
-                print("--" + str(5 * self.row + self.col+1), end="")
+                print('--' + str(self.num), end='')
             else:
-                print("  " + str(5 * self.row + self.col+1), end="")
+                print('  ' + str(self.num), end='')
         if self.e:
-            print("--", end="")
+            print('--', end='')
+        else:
+            print('  ', end='')
 
     def print_bot(self):
         if self.s:
-            print("   |  ", end="")
+            print('   |  ', end='')
         else:
-            print("      ", end="")
+            print('      ', end='')
 
 
 board = Board()
 board.print_board()
+# Socket thread init
+init_socket_thread = threading.Thread(target=init_socket)
+init_socket_thread.start()
 
-# # Global Variables
-# xpos = 0
-# ypos = 0
-# actions = []
-# actions_inv = []
-# pic_size = 40
-# port = 7777
-#
-# # Main Tk window instantiation
-# root = Tk()
-# root.title('Robot Control GUI')
-#
-# # Socket setup
-# s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# temp_s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-# temp_s.connect(('10.255.255.255', 1))
-# host = temp_s.getsockname()
-# temp_s.close
-# print(host)
-# s.bind((host, port))
-# s.listen(5)
-#
-# # Icon files and subsample
-# icons = [PhotoImage(file='icons/HeadTilt.png'), PhotoImage(file='icons/HeadRotate.png'),
-#          PhotoImage(file='icons/Move.png'), PhotoImage(file='icons/Rotate.png'),
-#          PhotoImage(file='icons/BodyRotate.png'), PhotoImage(file='icons/Wait.png'),
-#          PhotoImage(file='icons/STT.png'), PhotoImage(file='icons/TTS.png')]
-# for i in range(len(icons)):
-#     icons[i] = icons[i].subsample(5, 5)
-#
-#
-# # Function to initiate the socket
-# def init_socket():
-#     while True:
-#         global s_2
-#         print('Listening')
-#         s_2, ip = s.accept()
-#         print('Got a connection from %s' % str(ip))
-#         rt = threading.Thread(target=receive(s_2))
-#         rt.start()
-#
-#
-# # Function to receive STT commands
-# def receive(s_2):
-#     while True:
-#         global actions, actions_inv
-#         r = s_2.recv(1024)
-#         msg = r.decode('ascii')
-#         print('Received: ' + msg)
-#         msg_parts = msg.split()
-#         if msg_parts == 'move':
-#             actions.append(Action('Move', icons, 1))
-#             actions_inv.append(Action('Move', icons, 0))
-#             if msg_parts == 'for':
-#                 actions[len(actions)-1].time = int(msg_parts)
-#                 actions_inv[len(actions)-1].time = int(msg_parts)
-#             elif msg_parts == 'forward':
-#                 if len(msg_parts) > 2:
-#                     actions[len(actions)-1].time = int(msg_parts)
-#                     actions_inv[len(actions)-1].time = int(msg_parts)
-#                 actions[len(actions)-1].pos = 1
-#                 actions_inv[len(actions)-1].pos = 2
-#             elif msg_parts == 'backward':
-#                 if len(msg_parts) > 2:
-#                     actions[len(actions)-1].time = int(msg_parts)
-#                     actions_inv[len(actions)-1].time = int(msg_parts)
-#                 actions[len(actions)-1].pos = 2
-#                 actions_inv[len(actions)-1].pos = 2
-#         elif msg_parts == 'run' or msg_parts == 'go':
-#             if len(msg_parts) > 1:
-#                 if msg_parts == 'home':
-#                     time.sleep(1)
-#                     for x in range(len(actions_inv)):
-#                         actions.append(actions_inv[len(actions_inv)-x-1])
-#                     actions.time = int(actions.time/2)
-#                     run('andy')
-#                     del_all()
-#                     s_2.close()
-#             else:
-#                 run('andy')
-#         elif msg_parts == 'turn':
-#             actions.append(Action('Turn', icons, 1))
-#             actions_inv.append(Action('Turn', icons, 0))
-#             if msg_parts == 'left':
-#                 actions[len(actions)-1].pos = 1
-#                 actions_inv[len(actions)-1].pos = 2
-#             elif msg_parts == 'right':
-#                 actions[len(actions)-1].pos = 2
-#                 actions_inv[len(actions)-1].pos = 1
-#         elif msg_parts == 'rotate':
-#             if msg_parts == 'body':
-#                 actions.append(Action('Body Rotate', icons, 1))
-#             elif msg_parts == 'head':
-#                 actions.append(Action('Head Rotate', icons, 1))
-#             if msg_parts == 'left':
-#                 actions[len(actions)-1].pos = 1
-#             elif msg_parts == 'right':
-#                 if msg_parts == 'head':
-#                     actions[len(actions)-1].pos = 4
-#                 else:
-#                     actions[len(actions)-1].pos = 2
-#         elif msg_parts == 'tilt':
-#             actions.append(Action('Head Tilt', icons, 1))
-#             if msg_parts == 'down':
-#                 actions[len(actions)-1].pos = 1
-#             if msg_parts == 'up':
-#                 actions[len(actions)-1].pos = 4
-#         elif msg_parts == 'wait':
-#             actions.append(Action('Wait', icons, 1))
-#             if len(msg_parts) > 2:
-#                 if msg_parts == 'for':
-#                     actions[len(actions)-1].time = int(msg_parts)
-#         elif msg == 'clear' or msg == 'delete all':
-#             del_all()
-#         if msg_parts != 'go' and msg_parts != 'run' and (msg_parts[len(msg_parts)-1] == 'run' or msg_parts[len(msg_parts)-1] == 'go'):
-#             run('andy')
-#         if msg_parts != 'go' and msg_parts != 'run':
-#             run('andy')
-#
-#
-# # Function to ask for speech
-# def send_stt():
-#     send_message = 'get speech\r\n'
-#     s_2.send(send_message.encode('ascii'))
-#
-#
+
+
+
+
+
+
 # # Function to run all actions
 # def run(who):
 #     global actions, xpos, ypos
@@ -523,10 +475,7 @@ board.print_board()
 # del_all_button.pack(side=TOP)
 # stt_button_2 = Button(root, height=1, width=5, text='STT', bg='black', fg='white', command=send_stt)
 # stt_button_2.pack(side=TOP)
-#
-# # Socket thread init
-# init_socket_thread = threading.Thread(target=init_socket)
-# init_socket_thread.start()
+
 #
 # # Main tk loop and geometry
 # root.geometry('800x450')
