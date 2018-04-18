@@ -21,14 +21,14 @@ os.system('xset r off')
 port = 7777
 
 # Socket setup
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 temp_s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 temp_s.connect(('10.255.255.255', 1))
 host = temp_s.getsockname()
 temp_s.close()
 print(str(host[0]))
-s.bind((str(host[0]), port))
-s.listen(5)
+sock.bind((str(host[0]), port))
+sock.listen(5)
 
 
 # Function to initiate the socket
@@ -36,8 +36,9 @@ def init_socket():
     while True:
         global s_2
         print('Listening')
-        s_2, ip = s.accept()
+        s_2, ip = sock.accept()
         print('Got a connection from %s' % str(ip))
+        board.start()
         rt = threading.Thread(target=receive(s_2))
         rt.start()
 
@@ -58,54 +59,74 @@ def receive(r_s):
         if msg_parts[0] == 'start':
             board.start()
         elif msg_parts[0] == 'North':
-            board.move("n")
+            board.move('n')
         elif msg_parts[0] == 'East':
-            board.move("e")
+            board.move('e')
         elif msg_parts[0] == 'South':
-            board.move("s")
+            board.move('s')
         elif msg_parts[0] == 'West':
-            board.move("w")
+            board.move('w')
         elif msg_parts[0] == 'fight':
             board.fight()
         elif msg_parts[0] == 'run':
             board.run()
+        elif msg_parts[0] == 'Tango':
+            board.dance_win()
+        else:
+            print('Try again')
+            send_stt()
 
 
 # Class to represent the board
 class Board:
     def __init__(self):
         self.map = []
-        self.map.append(Location(1, 0, 1, 0, 0))
-        self.map.append(Location(2, 0, 1, 1, 1))
-        self.map.append(Location(3, 0, 0, 1, 1))
-        self.map.append(Location(4, 0, 1, 0, 0))
-        self.map.append(Location(5, 0, 0, 1, 1))
+        self.temp_map = []
+        for i in [self.map, self.temp_map]:
+            i.append(Location(1, 0, 1, 0, 0))
+            i.append(Location(2, 0, 1, 1, 1))
+            i.append(Location(3, 0, 0, 1, 1))
+            i.append(Location(4, 0, 1, 0, 0))
+            i.append(Location(5, 0, 0, 1, 1))
 
-        self.map.append(Location(6, 0, 1, 1, 0))
-        self.map.append(Location(7, 1, 0, 1, 1))
-        self.map.append(Location(8, 1, 0, 0, 0))
-        self.map.append(Location(9, 0, 1, 1, 0))
-        self.map.append(Location(10, 1, 0, 1, 1))
+            i.append(Location(6, 0, 1, 1, 0))
+            i.append(Location(7, 1, 0, 1, 1))
+            i.append(Location(8, 1, 0, 0, 0))
+            i.append(Location(9, 0, 1, 1, 0))
+            i.append(Location(10, 1, 0, 1, 1))
 
-        self.map.append(Location(11, 1, 0, 1, 0))
-        self.map.append(Location(12, 1, 1, 0, 0))
-        self.map.append(Location(13, 0, 1, 0, 1))
-        self.map.append(Location(14, 1, 0, 1, 1))
-        self.map.append(Location(15, 1, 0, 1, 0))
+            i.append(Location(11, 1, 0, 1, 0))
+            i.append(Location(12, 1, 1, 0, 0))
+            i.append(Location(13, 0, 1, 0, 1))
+            i.append(Location(14, 1, 0, 1, 1))
+            i.append(Location(15, 1, 0, 1, 0))
 
-        self.map.append(Location(16, 1, 1, 0, 0))
-        self.map.append(Location(17, 0, 0, 1, 1))
-        self.map.append(Location(18, 0, 0, 1, 0))
-        self.map.append(Location(19, 1, 1, 1, 0))
-        self.map.append(Location(20, 1, 0, 0, 1))
+            i.append(Location(16, 1, 1, 0, 0))
+            i.append(Location(17, 0, 0, 1, 1))
+            i.append(Location(18, 0, 0, 1, 0))
+            i.append(Location(19, 1, 1, 1, 0))
+            i.append(Location(20, 1, 0, 0, 1))
 
-        self.map.append(Location(21, 0, 1, 0, 0))
-        self.map.append(Location(22, 1, 1, 0, 1))
-        self.map.append(Location(23, 1, 0, 0, 1))
-        self.map.append(Location(24, 1, 1, 0, 0))
-        self.map.append(Location(25, 0, 0, 0, 1))
+            i.append(Location(21, 0, 1, 0, 0))
+            i.append(Location(22, 1, 1, 0, 1))
+            i.append(Location(23, 1, 0, 0, 1))
+            i.append(Location(24, 1, 1, 0, 0))
+            i.append(Location(25, 0, 0, 0, 1))
+
+        # Nodes
         self.end = Location
         self.pos = Location
+        self.charging_stations = []
+        self.coffee_shops = []
+        self.eb = []
+        self.mb = []
+        self.hb = []
+        self.db = []
+
+        # Fight Stats
+        self.hp = 25
+        self.e_hp = 0
+        self.dance_index = 0
 
     def print_board(self):
         for i in range(5):
@@ -120,51 +141,185 @@ class Board:
             print()
 
     def start(self):
+        # Start and end positions
         items = [1, 2, 3, 4, 5, 6, 10, 11, 15, 16, 20, 21, 22, 23, 24, 25]
         random.shuffle(items)
         for i in self.map:
             if items[0] == i.num:
+                i.type = 'ST'
                 self.pos = i
+                self.temp_map.pop(i.num - 1)
         if 0 < items[0] < 6:
             self.end = self.map[random.randint(20, 24)]
         elif items[0] == 6 or items[0] == 11 or items[0] == 16:
-            locations = [self.map[5], self.map[11], self.map[16]]
+            locations = [self.map[9], self.map[14], self.map[19]]
             random.shuffle(locations)
             self.end = locations[0]
         elif items[0] == 10 or items[0] == 15 or items[0] == 20:
-            locations = [self.map[9], self.map[14], self.map[19]]
+            locations = [self.map[5], self.map[10], self.map[15]]
             random.shuffle(locations)
             self.end = locations[0]
         elif 20 < items[0] < 26:
             self.end = self.map[random.randint(0, 4)]
-        print('Starting at ' + str(items[0]))
-        s_2.send(('Starting at ' + str(items[0]) + '\r\n').encode('ascii'))
-        time.sleep(3)
-        s_2.send('Where to?\r\n'.encode('ascii'))
-        time.sleep(2)
-        send_stt()
+        self.end.type = 'TE'
+        if self.pos.num > self.end.num:
+            self.temp_map.pop(self.end.num - 1)
+        else:
+            self.temp_map.pop(self.end.num - 2)
+        # Charging stations
+        for i in range(3):
+            random.shuffle(self.temp_map)
+            self.charging_stations.append(self.map[self.temp_map[0].num - 1])
+            self.temp_map.pop(0)
+            self.charging_stations[i].type = 'CH'
+
+        # Coffee shops
+        for i in range(3):
+            random.shuffle(self.temp_map)
+            self.coffee_shops.append(self.map[self.temp_map[0].num - 1])
+            self.temp_map.pop(0)
+            self.coffee_shops[i].type = 'CO'
+
+        # Easy battles
+        for i in range(6):
+            random.shuffle(self.temp_map)
+            self.eb.append(self.map[self.temp_map[0].num - 1])
+            self.temp_map.pop(0)
+            self.eb[i].type = 'EB'
+
+        # Medium battles
+        for i in range(5):
+            random.shuffle(self.temp_map)
+            self.mb.append(self.map[self.temp_map[0].num - 1])
+            self.temp_map.pop(0)
+            self.mb[i].type = 'MB'
+
+        # Hard battles
+        for i in range(3):
+            random.shuffle(self.temp_map)
+            self.hb.append(self.map[self.temp_map[0].num - 1])
+            self.temp_map.pop(0)
+            self.hb[i].type = 'HB'
+
+        # Dance Battles
+        for i in range(3):
+            random.shuffle(self.temp_map)
+            self.db.append(self.map[self.temp_map[0].num - 1])
+            self.temp_map.pop(0)
+            self.db[i].type = 'DB'
+
+        board.print_board()
+        board.ask_dir()
+        # s_2.send(('Starting at ' + str(items[0]) + '\r\n').encode('ascii'))
+        # time.sleep(3)
+        # s_2.send('Where to?\r\n'.encode('ascii'))
+        # time.sleep(2)
 
     def move(self, s):
-        if s == "n" and self.pos.n:
+        cont = 1
+        if s == 'n' and self.pos.n:
             self.pos = self.map[self.pos.num - 6]
-            print("You are at " + str(self.pos.num))
-        elif s == "e" and self.pos.e:
+        elif s == 'e' and self.pos.e:
             self.pos = self.map[self.pos.num]
-            print("You are at " + str(self.pos.num))
-        elif s == "s" and self.pos.s:
+        elif s == 's' and self.pos.s:
             self.pos = self.map[self.pos.num + 4]
-            print("You are at " + str(self.pos.num))
-        elif s == "w" and self.pos.w:
+        elif s == 'w' and self.pos.w:
             self.pos = self.map[self.pos.num - 2]
-            print("You are at " + str(self.pos.num))
         else:
-            print("You can't move there")
+            print('\nThere is a mountain in the way. Try again')
+            cont = 0
+            send_stt()
+        if cont:
+            if self.pos.type == 'EB':
+                board.enter_battle(random.randint(3, 6))
+            elif self.pos.type == 'MB':
+                board.enter_battle(random.randint(7, 9))
+            elif self.pos.type == 'HB':
+                board.enter_battle(random.randint(10, 12))
+            elif self.pos.type == 'CO':
+                if self.end.num > self.pos.num:
+                    print('\nThe end is to the south or east...')
+                elif self.end.num < self.pos.num:
+                    print('\nThe end is to the north or west...')
+                board.ask_dir()
+            elif self.pos.type == 'CH':
+                self.hp = 25
+                print('\nHealth Replenished')
+                board.ask_dir()
+            elif self.pos.type == 'DB':
+                board.dance_battle()
+            elif self.pos.type == 'TE':
+                print('YOU WIN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+
+    def ask_dir(self):
+        text = '\nSelect one:'
+        if self.pos.n:
+            text += '\nNorth'
+        if self.pos.e:
+            text += '\nEast'
+        if self.pos.s:
+            text += '\nSouth'
+        if self.pos.w:
+            text += '\nWest'
+        print(text)
+        send_stt()
+
+    def enter_battle(self, bad_guys):
+        print('\n' + str(bad_guys) + ' bad guys showed up!\nFight or run?')
+        self.e_hp = bad_guys
+        send_stt()
+
+    def dance_battle(self):
+        prompts = ['Salsa', 'Tango', 'Merengue']
+        print('\nDancers showed up using the ' + prompts[self.dance_index])
+        self.dance_index = self.dance_index + 1
+        print('What dance will you use to defeat them?')
+        send_stt()
+
+    def dance_win(self):
+        print('You won the dance off')
+        board.ask_dir()
 
     def run(self):
         time.sleep(1)
+        success = random.randint(0, 4)
+        if success != 4:
+            locations = ['n', 'e', 's', 'w']
+            random.shuffle(locations)
+            for i in range(len(locations)):
+                if locations[i] == 'n' and self.pos.n:
+                    self.pos = self.map[self.pos.num - 6]
+                elif locations[i] == 'e' and self.pos.e:
+                    self.pos = self.map[self.pos.num]
+                elif locations[i] == 's' and self.pos.s:
+                    self.pos = self.map[self.pos.num + 4]
+                elif locations[i] == 'w' and self.pos.w:
+                    self.pos = self.map[self.pos.num - 2]
+            board.ask_dir()
+        else:
+            print('Run failed :(')
 
     def fight(self):
-        time.sleep(1)
+        cont = 0
+        self.e_hp = self.e_hp - random.randint(1, 3)
+        self.hp = self.hp - random.randint(2, 4)
+        if self.e_hp <= 0:
+            print('You won the fight')
+            board.ask_dir()
+        elif self.hp <= 0:
+            print('You died a tragic death')
+        else:
+            cont = 1
+        if cont:
+            print('Enemy health:' + str(self.e_hp) + ' Your health: ' + str(self.hp))
+            if self.e_hp <= 0:
+                print('You won the fight')
+                board.ask_dir()
+            elif self.hp <= 0:
+                print('You died a tragic death')
+            else:
+                print('Fight or run?')
+                send_stt()
 
 
 class Location:
@@ -174,6 +329,7 @@ class Location:
         self.e = e
         self.s = s
         self.w = w
+        self.type = str(self.num)
 
     def print_top(self):
         if self.n:
@@ -182,16 +338,10 @@ class Location:
             print('      ', end='')
 
     def print_mid(self):
-        if self.num < 10:
-            if self.w:
-                print('---' + str(self.num), end='')
-            else:
-                print('   ' + str(self.num), end='')
+        if self.w:
+            print('--' + str(self.type), end='')
         else:
-            if self.w:
-                print('--' + str(self.num), end='')
-            else:
-                print('  ' + str(self.num), end='')
+            print('  ' + str(self.type), end='')
         if self.e:
             print('--', end='')
         else:
@@ -204,8 +354,9 @@ class Location:
             print('      ', end='')
 
 
+# Board init
 board = Board()
-board.print_board()
+
 # Socket thread init
 init_socket_thread = threading.Thread(target=init_socket)
 init_socket_thread.start()
