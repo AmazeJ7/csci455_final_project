@@ -72,9 +72,92 @@ def receive(r_s):
             board.run()
         elif msg_parts[0] == 'Tango':
             board.dance_win()
+        elif msg_parts[0] == 'end':
+            board.end()
         else:
             print('Try again')
             send_stt()
+
+
+# Function to move foreword
+def move():
+    controller.setTarget(1,5000)
+    time.sleep(1)
+    controller.setTarget(1,6000)
+
+
+# Function to turn
+def turn(d):
+    if d == 'l':
+        controller.setTarget(2, 7000)
+        time.sleep(1)
+        controller.setTarget(2, 6000)
+    elif d == 'r':
+        controller.setTarget(2, 5000)
+        time.sleep(1)
+        controller.setTarget(2, 6000)
+
+
+# Function to animate movement
+def animate(s):
+    if s == 'n':
+        if board.pos.facing == 'n':
+            move()
+        elif board.pos.facing == 'e':
+            turn('l')
+            move()
+        elif board.pos.facing == 's':
+            turn('l')
+            turn('l')
+            move()
+        elif board.pos.facing == 'w':
+            turn('r')
+            move()
+    elif s == 'e':
+        if board.pos.facing == 'n':
+            turn('r')
+            move()
+        elif board.pos.facing == 'e':
+            move()
+        elif board.pos.facing == 's':
+            turn('l')
+            move()
+        elif board.pos.facing == 'w':
+            turn('r')
+            turn('r')
+            move()
+    elif s == 's':
+        if board.pos.facing == 'n':
+            turn('r')
+            turn('r')
+            move()
+        elif board.pos.facing == 'e':
+            turn('r')
+            move()
+        elif board.pos.facing == 's':
+            move()
+        elif board.pos.facing == 'w':
+            turn('l')
+            move()
+    elif s == 'w':
+        if board.pos.facing == 'n':
+            turn('l')
+            move()
+        elif board.pos.facing == 'e':
+            turn('l')
+            turn('l')
+            move()
+        elif board.pos.facing == 's':
+            turn('r')
+            move()
+        elif board.pos.facing == 'w':
+            move()
+    elif s == 'no':
+        controller.setTarget(3, 4000)
+        time.sleep(1)
+        controller.setTarget(3, 8000)
+        time.sleep(1)
+        controller.setTarget(3, 6000)
 
 
 # Class to represent the board
@@ -151,16 +234,20 @@ class Board:
                 self.temp_map.pop(i.num - 1)
         if 0 < items[0] < 6:
             self.end = self.map[random.randint(20, 24)]
+            self.pos.facing = 's'
         elif items[0] == 6 or items[0] == 11 or items[0] == 16:
             locations = [self.map[9], self.map[14], self.map[19]]
             random.shuffle(locations)
             self.end = locations[0]
+            self.pos.facing = 'e'
         elif items[0] == 10 or items[0] == 15 or items[0] == 20:
             locations = [self.map[5], self.map[10], self.map[15]]
             random.shuffle(locations)
             self.end = locations[0]
+            self.pos.facing = 'w'
         elif 20 < items[0] < 26:
             self.end = self.map[random.randint(0, 4)]
+            self.pos.facing = 'n'
         self.end.type = 'TE'
         if self.pos.num > self.end.num:
             self.temp_map.pop(self.end.num - 1)
@@ -210,23 +297,24 @@ class Board:
 
         board.print_board()
         board.ask_dir()
-        # s_2.send(('Starting at ' + str(items[0]) + '\r\n').encode('ascii'))
-        # time.sleep(3)
-        # s_2.send('Where to?\r\n'.encode('ascii'))
-        # time.sleep(2)
 
     def move(self, s):
         cont = 1
         if s == 'n' and self.pos.n:
             self.pos = self.map[self.pos.num - 6]
+            animate('n')
         elif s == 'e' and self.pos.e:
             self.pos = self.map[self.pos.num]
+            animate('e')
         elif s == 's' and self.pos.s:
             self.pos = self.map[self.pos.num + 4]
+            animate('s')
         elif s == 'w' and self.pos.w:
             self.pos = self.map[self.pos.num - 2]
+            animate('w')
         else:
             print('\nThere is a mountain in the way. Try again')
+            animate('no')
             cont = 0
             send_stt()
         if cont:
@@ -250,6 +338,7 @@ class Board:
                 board.dance_battle()
             elif self.pos.type == 'TE':
                 print('YOU WIN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                sock.close()
 
     def ask_dir(self):
         text = '\nSelect one:'
@@ -282,8 +371,7 @@ class Board:
 
     def run(self):
         time.sleep(1)
-        success = random.randint(0, 4)
-        if success != 4:
+        if random.randint(0, 3) != 0:
             locations = ['n', 'e', 's', 'w']
             random.shuffle(locations)
             for i in range(len(locations)):
@@ -308,6 +396,7 @@ class Board:
             board.ask_dir()
         elif self.hp <= 0:
             print('You died a tragic death')
+            sock.close()
         else:
             cont = 1
         if cont:
@@ -321,10 +410,15 @@ class Board:
                 print('Fight or run?')
                 send_stt()
 
+    def end(self):
+        print("Bye")
+        sock.close()
+
 
 class Location:
     def __init__(self, num, n, e, s, w):
         self.num = num
+        self.facing = ''
         self.n = n
         self.e = e
         self.s = s
@@ -360,6 +454,8 @@ board = Board()
 # Socket thread init
 init_socket_thread = threading.Thread(target=init_socket)
 init_socket_thread.start()
+
+os.system('xset r on')
 
 # # Function to run all actions
 # def run(who):
@@ -661,4 +757,4 @@ init_socket_thread.start()
 # # Main tk loop and geometry
 # root.geometry('800x450')
 # root.mainloop()
-# os.system('xset r on')
+#
