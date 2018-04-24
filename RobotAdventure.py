@@ -290,8 +290,9 @@ class Board:
 
     # Function to enter battle with enemies
     def enter_battle(self, bad_guys):
-        print('\n' + str(bad_guys) + ' bad guys showed up!\nFight or run?')
-        self.e_hp = bad_guys
+        if self.e_hp == 0:
+            self.e_hp = bad_guys
+        print('\n' + str(self.e_hp) + ' bad guys showed up!\nFight or run?')
         send_stt()
 
     # Function to enter battle with dancers
@@ -325,12 +326,28 @@ class Board:
             board.ask_dir()
         else:
             print('Run failed :(')
+            self.hp = self.hp - random.randint(2, 4)
+            if self.hp <= 0:
+                print('You died a tragic death')
+                sock.close()
+            send_stt()
 
     # Function to fight enemies
     def fight(self):
         cont = 0
         self.e_hp = self.e_hp - random.randint(1, 3)
         self.hp = self.hp - random.randint(2, 4)
+        controller.setTarget(0, 5000)
+        controller.setTarget(3, 5000)
+        controller.setTarget(4, 5000)
+        time.sleep(1)
+        controller.setTarget(0, 5000)
+        controller.setTarget(3, 7000)
+        controller.setTarget(4, 7000)
+        time.sleep(1)
+        controller.setTarget(0, 5000)
+        controller.setTarget(3, 6000)
+        controller.setTarget(4, 6000)
         if self.e_hp <= 0:
             print('You won the fight')
             board.ask_dir()
