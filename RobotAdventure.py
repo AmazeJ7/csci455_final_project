@@ -1,4 +1,4 @@
-from MockMaestro import Controller
+from Maestro import Controller
 from tkinter import *
 import time
 import os
@@ -14,13 +14,21 @@ controller.setAccel(0, 10)
 controller.setAccel(1, 10)
 controller.setAccel(2, 30)
 controller.setAccel(3, 20)
-controller.setAccel(3, 20)
+controller.setAccel(4, 20)
+controller.setAccel(6, 20)
+controller.setAccel(7, 20)
+controller.setAccel(8, 20)
+controller.setAccel(9, 20)
+controller.setAccel(10, 20)
+controller.setAccel(11, 20)
 os.system('xset r off')
 
 # Global Variables
 port = 7777
 
 # Socket setup
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.close()
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 temp_s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 temp_s.connect(('10.255.255.255', 1))
@@ -49,6 +57,12 @@ def send_stt():
     s_2.send(send_message.encode('ascii'))
 
 
+# Function to send a tts value
+def send_msg(msg):
+    msg = msg + "\r\n"
+    s_2.send(msg.encode('ascii'))
+
+
 # Function to receive STT commands
 def receive(r_s):
     while True:
@@ -56,24 +70,28 @@ def receive(r_s):
         msg = r.decode('ascii')
         print('Received: ' + msg)
         msg_parts = msg.split()
-        if msg_parts[0] == 'start':
-            board.start()
-        elif msg_parts[0] == 'North':
-            board.move('n')
-        elif msg_parts[0] == 'East':
-            board.move('e')
-        elif msg_parts[0] == 'South':
-            board.move('s')
-        elif msg_parts[0] == 'West':
-            board.move('w')
-        elif msg_parts[0] == 'fight':
-            board.fight()
-        elif msg_parts[0] == 'run':
-            board.run()
-        elif msg_parts[0] == 'Tango':
-            board.dance_win()
-        elif msg_parts[0] == 'end':
-            board.end()
+        if len(msg_parts) > 0:
+            if msg_parts[0] == 'start':
+                board.start()
+            elif msg_parts[0] == 'North':
+                board.move('n')
+            elif msg_parts[0] == 'East':
+                board.move('e')
+            elif msg_parts[0] == 'South':
+                board.move('s')
+            elif msg_parts[0] == 'West':
+                board.move('w')
+            elif msg_parts[0] == 'fight':
+                board.fight()
+            elif msg_parts[0] == 'run':
+                board.run()
+            elif msg_parts[0] == 'Tango':
+                board.dance_win()
+            elif msg_parts[0] == 'end':
+                board.end()
+            else:
+                print('Try again')
+                send_stt()
         else:
             print('Try again')
             send_stt()
@@ -82,7 +100,7 @@ def receive(r_s):
 # Function to move foreword
 def move():
     controller.setTarget(1, 5000)
-    time.sleep(2)
+    time.sleep(1)
     controller.setTarget(1, 6000)
 
 
@@ -90,11 +108,11 @@ def move():
 def turn(d):
     if d == 'l':
         controller.setTarget(2, 7000)
-        time.sleep(2)
+        time.sleep(1)
         controller.setTarget(2, 6000)
     elif d == 'r':
         controller.setTarget(2, 5000)
-        time.sleep(2)
+        time.sleep(1)
         controller.setTarget(2, 6000)
 
 
@@ -140,7 +158,6 @@ class Board:
         self.db = []
         # Fight Stats
         self.hp = 25
-        self.e_hp = 0
         self.dance_index = 0
 
     # Function to print out the board
@@ -248,6 +265,8 @@ class Board:
             self.pos.facing = 'w'
         else:
             print('\nThere is a mountain in the way. Try again')
+            send_msg('there is a mountain in the way. try again.')
+            time.sleep(4)
             self.animate('no')
             cont = 0
             send_stt()
@@ -261,51 +280,79 @@ class Board:
             elif self.pos.type == 'CO':
                 if self.end.num > self.pos.num:
                     print('\nThe end is to the south or east...')
+                    send_msg('the end is to the south or east')
+                    time.sleep(4)
                 elif self.end.num < self.pos.num:
                     print('\nThe end is to the north or west...')
+                    send_msg('the end is to the north or west')
+                    time.sleep(4)
                 board.ask_dir()
             elif self.pos.type == 'CH':
                 self.hp = 25
                 print('\nHealth Replenished')
+                send_msg('health replenished')
+                time.sleep(4)
                 board.ask_dir()
             elif self.pos.type == 'DB':
                 board.dance_battle()
             elif self.pos.type == 'TE':
                 print('YOU WIN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                send_msg('you win')
+                time.sleep(4)
                 sock.close()
+            elif self.pos.type == 'ST':
+                print('Back where you started...')
+                send_msg('back where you started')
+                time.sleep(4)
+                board.ask_dir()
 
     # Function to ask the user for directions
     def ask_dir(self):
         text = '\nSelect one:'
+        msg = 'select one'
         if self.pos.n:
             text += '\nNorth'
+            msg += 'North '
         if self.pos.e:
             text += '\nEast'
+            msg += 'East '
         if self.pos.s:
             text += '\nSouth'
+            msg += 'South '
         if self.pos.w:
             text += '\nWest'
+            msg += 'West '
         print(text)
+        send_msg(msg)
+        time.sleep(4)
         send_stt()
 
     # Function to enter battle with enemies
     def enter_battle(self, bad_guys):
-        if self.e_hp == 0:
-            self.e_hp = bad_guys
-        print('\n' + str(self.e_hp) + ' bad guys showed up!\nFight or run?')
+        if self.pos.e_hp == 0:
+            self.pos.e_hp = bad_guys
+        print('\n' + str(self.pos.e_hp) + ' bad guys showed up!\nFight or run?')
+        send_msg(str(self.pos.e_hp) + ' bad guys showed up. fight or run?')
+        time.sleep(4)
         send_stt()
 
     # Function to enter battle with dancers
     def dance_battle(self):
         prompts = ['Salsa', 'Tango', 'Merengue']
         print('\nDancers showed up using the ' + prompts[self.dance_index])
+        send_msg('dancers showed up using the ' + prompts[self.dance_index])
+        time.sleep(4)
         self.dance_index = self.dance_index + 1
         print('What dance will you use to defeat them?')
+        send_msg('what dance will you use to defeat them?')
+        time.sleep(4)
         send_stt()
 
     # Function to represent a dance off win
     def dance_win(self):
         print('You won the dance off')
+        send_msg('you won the dance off')
+        time.sleep(3)
         board.ask_dir()
 
     # Function to run away from enemies
@@ -326,16 +373,20 @@ class Board:
             board.ask_dir()
         else:
             print('Run failed :(')
+            send_msg('run failed')
+            time.sleep(2)
             self.hp = self.hp - random.randint(2, 4)
             if self.hp <= 0:
                 print('You died a tragic death')
+                send_msg('you died a tragic death')
+                time.sleep(3)
                 sock.close()
             send_stt()
 
     # Function to fight enemies
     def fight(self):
         cont = 0
-        self.e_hp = self.e_hp - random.randint(1, 3)
+        self.pos.e_hp = self.pos.e_hp - random.randint(1, 3)
         self.hp = self.hp - random.randint(2, 4)
         controller.setTarget(0, 5000)
         controller.setTarget(3, 5000)
@@ -348,24 +399,29 @@ class Board:
         controller.setTarget(0, 5000)
         controller.setTarget(3, 6000)
         controller.setTarget(4, 6000)
-        if self.e_hp <= 0:
+        controller.setTarget(6, 9000)
+        controller.setTarget(8, 9000)
+        time.sleep(1)
+        controller.setTarget(6, 6000)
+        controller.setTarget(8, 6000)
+        if self.pos.e_hp <= 0:
             print('You won the fight')
+            send_msg('you won the fight')
+            time.sleep(3)
             board.ask_dir()
         elif self.hp <= 0:
             print('You died a tragic death')
+            send_msg('you died a tragic death')
+            time.sleep(3)
             sock.close()
         else:
             cont = 1
         if cont:
-            print('Enemy health:' + str(self.e_hp) + ' Your health: ' + str(self.hp))
-            if self.e_hp <= 0:
-                print('You won the fight')
-                board.ask_dir()
-            elif self.hp <= 0:
-                print('You died a tragic death')
-            else:
-                print('Fight or run?')
-                send_stt()
+            print('Enemy health:' + str(self.pos.e_hp) + ' Your health: ' + str(self.hp))
+            print('Fight or run?')
+            send_msg('enemy health is' + str(self.pos.e_hp) + '. your health is ' + str(self.hp) + '. fight or run?')
+            time.sleep(4)
+            send_stt()
 
     # Function to animate movement
     def animate(self, s):
@@ -444,6 +500,7 @@ class Location:
         self.s = s
         self.w = w
         self.type = str(self.num)
+        self.e_hp = 0
 
     # Function to print out the top row of a location
     def print_top(self):
